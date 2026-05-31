@@ -839,7 +839,7 @@ def add_flood_raster_to_folium(
     return m
 
 
-def add_flood_legend_to_folium(m, title="淹水深度圖例（單位：公尺）"):
+def add_flood_legend_to_folium(m, title="淹水潛勢（公尺）"):
     legend_items = [
         ("#fff5f0", "0 - 0.05 m"),
         ("#fcbba1", "0.05 - 0.10 m"),
@@ -1271,7 +1271,7 @@ def build_scenario_map(
     )
     m = add_flood_legend_to_folium(
         m,
-        title=f"{scenario_name} 淹水深度圖例（單位：公尺）"
+        title=f"淹水潛勢（公尺）<br>情境：{scenario_name}"
     )
 
     folium.GeoJson(
