@@ -1953,6 +1953,14 @@ population_gdf["hazard_norm_Q100"] = np.where(
     (population_gdf["hazard_ratio_Q100"] - hazard_ratio_min) / (hazard_ratio_max - hazard_ratio_min),
     np.nan
 )
+population_gdf["hazard_display_Q100"] = population_gdf.apply(
+    lambda row: (
+        f"{row['hazard_norm_Q100']:.2f} ({row['hazard_ratio_Q100'] * 100:.1f}% 路段受阻)"
+        if pd.notna(row["hazard_norm_Q100"]) and pd.notna(row["hazard_ratio_Q100"])
+        else None
+    ),
+    axis=1
+)
 
 hazard_ratio_bins = np.linspace(0, 1, 6)
 hazard_ratio_colors = [
@@ -2053,7 +2061,7 @@ flood_potential_legend_html = """
 """
 
 hazard_popup = folium.GeoJsonPopup(
-    fields=["COUNTYNAME", "TOWNNAME", "VILLNAME", "blocked_road_length_m_Q100", "total_road_length_m_Q100", "hazard_ratio_Q100", "hazard_norm_Q100"],
+    fields=["COUNTYNAME", "TOWNNAME", "VILLNAME", "blocked_road_length_m_Q100", "total_road_length_m_Q100", "hazard_ratio_Q100", "hazard_display_Q100"],
     aliases=["縣市", "鄉鎮市區", "村里", "無法通行路段長度(m)", "全路段長度(m)", "危害度原始比例", "危害度(正規化)"],
     localize=True,
     labels=True,
@@ -2085,7 +2093,7 @@ hazard_legend_html = f"""
 <div id="hazard-legend" style="
     display:none;
     position: fixed;
-    bottom: 430px;
+    bottom: 440px;
     left: 40px;
     width: 220px;
     z-index: 9999;
@@ -2288,7 +2296,7 @@ risk_legend_html = f"""
 <div id="risk-legend" style="
     display:none;
     position: fixed;
-    bottom: 255px;
+    bottom: 235px;
     right: 40px;
     width: 220px;
     z-index: 9999;
