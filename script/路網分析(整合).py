@@ -1470,6 +1470,7 @@ residential_base_3826["shelter_access_score_normal"] = residential_base_3826["ti
 )
 
 scenario_csv_frames = []
+q100_edges_3826 = None
 
 
 def build_comparison_dataframe(residential_base_gdf, scenario_frames):
@@ -1518,6 +1519,9 @@ for scenario_name in scenario_names:
     print("路段總數：", len(edges_scenario_3826))
     print("阻斷路段數：", int(edges_scenario_3826[blocked_col].sum()))
     print("可通行路段數：", int((~edges_scenario_3826[blocked_col]).sum()))
+
+    if scenario_name == "Q100":
+        q100_edges_3826 = edges_scenario_3826.copy()
 
     residential_scenario_3826 = residential_base_3826.copy()
     medical_scenario_3826 = medical_dest_3826.copy()
@@ -1885,21 +1889,108 @@ vulnerability_colors = [
     "#084081",
 ]
 
+if q100_edges_3826 is None:
+    raise ValueError("找不到 Q100 路網分析結果，無法建立危害度圖層。")
+
+population_gdf_3826 = population_gdf.to_crs(twd97_crs).copy()
+population_gdf_3826["polygon_id"] = population_gdf_3826.index
+q100_blocked_col = "Q100_is_blocked"
+q100_edges_for_hazard = q100_edges_3826[["geometry", q100_blocked_col]].copy()
+q100_edges_for_hazard = q100_edges_for_hazard[q100_edges_for_hazard.geometry.notna()].copy()
+
+total_road_segments = gpd.overlay(
+    q100_edges_for_hazard,
+    population_gdf_3826[["polygon_id", "geometry"]],
+    how="intersection",
+    keep_geom_type=False
+)
+total_road_segments["segment_length_m"] = total_road_segments.geometry.length
+
+blocked_road_segments = gpd.overlay(
+    q100_edges_for_hazard[q100_edges_for_hazard[q100_blocked_col]].copy(),
+    population_gdf_3826[["polygon_id", "geometry"]],
+    how="intersection",
+    keep_geom_type=False
+)
+blocked_road_segments["segment_length_m"] = blocked_road_segments.geometry.length
+
+total_road_length_by_polygon = total_road_segments.groupby("polygon_id")["segment_length_m"].sum()
+blocked_road_length_by_polygon = blocked_road_segments.groupby("polygon_id")["segment_length_m"].sum()
+
+population_gdf["total_road_length_m_Q100"] = population_gdf.index.map(total_road_length_by_polygon)
+population_gdf["blocked_road_length_m_Q100"] = (
+    population_gdf.index.map(blocked_road_length_by_polygon).fillna(0.0)
+)
+population_gdf["hazard_ratio_Q100"] = np.where(
+    population_gdf["total_road_length_m_Q100"].fillna(0) > 0,
+    population_gdf["blocked_road_length_m_Q100"] / population_gdf["total_road_length_m_Q100"],
+    np.nan
+)
+
+hazard_ratio_bins = np.linspace(0, 1, 6)
+hazard_ratio_colors = [
+    "#ffffcc",
+    "#ffeda0",
+    "#feb24c",
+    "#f03b20",
+    "#bd0026",
+]
+
+
+def hazard_ratio_style_function(feature):
+    hazard_ratio_value = feature["properties"].get("hazard_ratio_Q100")
+    if hazard_ratio_value is None or pd.isna(hazard_ratio_value):
+        return {
+            "fillColor": "transparent",
+            "color": "#666666",
+            "weight": 0.8,
+            "fillOpacity": 0.0,
+        }
+
+    color_idx = np.digitize([hazard_ratio_value], hazard_ratio_bins[1:-1], right=False)[0]
+    return {
+        "fillColor": hazard_ratio_colors[color_idx],
+        "color": "#404040",
+        "weight": 0.8,
+        "fillOpacity": 0.75,
+    }
+
+
+hazard_ratio_legend_items = []
+for idx, color in enumerate(hazard_ratio_colors):
+    lower = hazard_ratio_bins[idx]
+    upper = hazard_ratio_bins[idx + 1]
+    label = f"{lower:.2f} - {upper:.2f}"
+    hazard_ratio_legend_items.append((color, label))
+
+hazard_ratio_items_html = "".join(
+    [
+        (
+            "<div style='display:flex; align-items:center; margin-bottom:6px;'>"
+            f"<span style='display:inline-block; width:18px; height:12px; background:{color}; "
+            "border:1px solid #666; margin-right:8px;'></span>"
+            f"<span>{label}</span>"
+            "</div>"
+        )
+        for color, label in hazard_ratio_legend_items
+    ]
+)
+
 hazard_q100_tif_path = Path("../data/Geo_RA/Q100_depth_max.GangKoudem.2022dem.tif")
-hazard_layer = add_flood_raster_to_folium(
+flood_potential_layer = add_flood_raster_to_folium(
     population_map_discrete,
     tif_path=hazard_q100_tif_path,
-    layer_name="危害度(淹水潛勢圖-Q100)",
+    layer_name="淹水潛勢圖-Q100",
     opacity=0.80,
     show=True,
     return_layer=True
 )
 
-hazard_legend_html = """
-<div id="hazard-legend" style="
+flood_potential_legend_html = """
+<div id="flood-potential-legend" style="
     display:none;
     position: fixed;
-    bottom: 425px;
+    bottom: 625px;
     left: 40px;
     width: 220px;
     z-index: 9999;
@@ -1910,7 +2001,7 @@ hazard_legend_html = """
     font-size: 13px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 ">
-    <div style="font-weight:700; margin-bottom:10px;">危害度(淹水潛勢圖-Q100)</div>
+    <div style="font-weight:700; margin-bottom:10px;">淹水潛勢圖-Q100</div>
     <div style='display:flex; align-items:center; margin-bottom:6px;'>
         <span style='display:inline-block; width:18px; height:12px; background:#fff5f0; border:1px solid #666; margin-right:8px;'></span>
         <span>0 - 0.05 m</span>
@@ -1931,6 +2022,55 @@ hazard_legend_html = """
         <span style='display:inline-block; width:18px; height:12px; background:#99000d; border:1px solid #666; margin-right:8px;'></span>
         <span>> 0.50 m</span>
     </div>
+</div>
+"""
+
+hazard_popup = folium.GeoJsonPopup(
+    fields=["COUNTYNAME", "TOWNNAME", "VILLNAME", "blocked_road_length_m_Q100", "total_road_length_m_Q100", "hazard_ratio_Q100"],
+    aliases=["縣市", "鄉鎮市區", "村里", "無法通行路段長度(m)", "全路段長度(m)", "危害度"],
+    localize=True,
+    labels=True,
+    style="background-color: white;"
+)
+
+hazard_tooltip = folium.GeoJsonTooltip(
+    fields=["TOWNNAME", "VILLNAME", "hazard_ratio_Q100"],
+    aliases=["鄉鎮市區", "村里", "危害度"],
+    localize=True,
+    sticky=False
+)
+
+hazard_layer = folium.GeoJson(
+    data=population_gdf,
+    name="危害度",
+    style_function=hazard_ratio_style_function,
+    popup=hazard_popup,
+    tooltip=hazard_tooltip,
+    highlight_function=lambda _: {
+        "weight": 2.0,
+        "color": "#252525",
+        "fillOpacity": 0.85,
+    },
+)
+hazard_layer.add_to(population_map_discrete)
+
+hazard_legend_html = f"""
+<div id="hazard-legend" style="
+    display:none;
+    position: fixed;
+    bottom: 430px;
+    left: 40px;
+    width: 220px;
+    z-index: 9999;
+    background: white;
+    border: 2px solid #666;
+    border-radius: 6px;
+    padding: 12px 12px 10px 12px;
+    font-size: 13px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+">
+    <div style="font-weight:700; margin-bottom:10px;">危害度</div>
+    {hazard_ratio_items_html}
 </div>
 """
 
@@ -2044,20 +2184,26 @@ vulnerability_legend_html = f"""
 
 legend_control_html = f"""
 {{% macro html(this, kwargs) %}}
+{flood_potential_legend_html}
 {hazard_legend_html}
 {vulnerability_legend_html}
 {population_legend_html}
 <script>
 document.addEventListener("DOMContentLoaded", function() {{
     var map = {population_map_discrete.get_name()};
+    var floodPotentialLegend = document.getElementById("flood-potential-legend");
     var hazardLegend = document.getElementById("hazard-legend");
     var vulnerabilityLegend = document.getElementById("vulnerability-legend");
     var exposureLegend = document.getElementById("exposure-legend");
+    var floodPotentialLayer = {flood_potential_layer.get_name()};
     var hazardLayer = {hazard_layer.get_name()};
     var exposureLayer = {exposure_layer.get_name()};
     var vulnerabilityLayer = {vulnerability_layer.get_name()};
 
     function updateLegendByLayer(layer, visible) {{
+        if (layer === floodPotentialLayer && floodPotentialLegend) {{
+            floodPotentialLegend.style.display = visible ? "block" : "none";
+        }}
         if (layer === hazardLayer && hazardLegend) {{
             hazardLegend.style.display = visible ? "block" : "none";
         }}
@@ -2069,6 +2215,7 @@ document.addEventListener("DOMContentLoaded", function() {{
         }}
     }}
 
+    updateLegendByLayer(floodPotentialLayer, map.hasLayer(floodPotentialLayer));
     updateLegendByLayer(hazardLayer, map.hasLayer(hazardLayer));
     updateLegendByLayer(vulnerabilityLayer, map.hasLayer(vulnerabilityLayer));
     updateLegendByLayer(exposureLayer, map.hasLayer(exposureLayer));
