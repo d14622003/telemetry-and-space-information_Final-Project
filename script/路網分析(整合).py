@@ -1714,6 +1714,9 @@ population_gdf["exposure_norm"] = (
     (population_gdf[population_value_col] - population_min)
     / (population_max - population_min)
 )
+population_gdf["exposure_display"] = population_gdf["exposure_norm"].apply(
+    lambda value: f"{value:.2f}" if pd.notna(value) else None
+)
 
 #%% 建立暴露度分級地圖
 population_quantiles = np.quantile(
@@ -1817,8 +1820,8 @@ population_legend_html = f"""
 """
 
 population_popup = folium.GeoJsonPopup(
-    fields=["COUNTYNAME", "TOWNNAME", "VILLNAME", population_value_col],
-    aliases=["縣市", "鄉鎮市區", "村里", "總人口數"],
+    fields=["COUNTYNAME", "TOWNNAME", "VILLNAME", population_value_col, "exposure_display"],
+    aliases=["縣市", "鄉鎮市區", "村里", "總人口數", "暴露度指標"],
     localize=True,
     labels=True,
     style="background-color: white;"
@@ -1950,6 +1953,9 @@ population_gdf["hazard_display_Q100"] = population_gdf.apply(
     ),
     axis=1
 )
+population_gdf["hazard_ratio_display_Q100"] = population_gdf["hazard_ratio_Q100"].apply(
+    lambda value: f"{value * 100:.1f}% 路段受阻" if pd.notna(value) else None
+)
 
 hazard_ratio_bins = np.linspace(0, 1, 6)
 hazard_ratio_colors = [
@@ -2050,8 +2056,8 @@ flood_potential_legend_html = """
 """
 
 hazard_popup = folium.GeoJsonPopup(
-    fields=["COUNTYNAME", "TOWNNAME", "VILLNAME", "blocked_road_length_m_Q100", "total_road_length_m_Q100", "hazard_ratio_Q100", "hazard_display_Q100"],
-    aliases=["縣市", "鄉鎮市區", "村里", "無法通行路段長度(m)", "全路段長度(m)", "危害度原始比例", "危害度(正規化)"],
+    fields=["COUNTYNAME", "TOWNNAME", "VILLNAME", "blocked_road_length_m_Q100", "total_road_length_m_Q100", "hazard_display_Q100", "hazard_ratio_display_Q100"],
+    aliases=["縣市", "鄉鎮市區", "村里", "無法通行路段長度(m)", "全路段長度(m)", "危害度指標", "淹水路段比例"],
     localize=True,
     labels=True,
     style="background-color: white;"
@@ -2343,7 +2349,7 @@ document.addEventListener("DOMContentLoaded", function() {{
     var vulnerabilityLayer = {vulnerability_layer.get_name()};
 
     function updateLegendLayout() {{
-        var gap = 30;
+        var gap = 18;
         var bottomStart = 30;
 
         var leftLegends = [vulnerabilityLegend, exposureLegend, hazardLegend];
