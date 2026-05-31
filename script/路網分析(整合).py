@@ -1198,9 +1198,9 @@ def add_residential_popup_layers(
 
         popup_text = (
             f"住宅 ID：{row.get('origin_id', '')}<br>"
-            f"土地利用大類：{row.get('LCODE_C1', '')} {row.get('C1_NAME', '')}<br>"
-            f"土地利用中類：{row.get('LCODE_C2', '')} {row.get('C2_NAME', '')}<br>"
-            f"土地利用小類：{row.get('LCODE_C3', '')} {row.get('C3_NAME', '')}<br>"
+            f"土地利用第一級分類：{row.get('LCODE_C1', '')} {row.get('C1_NAME', '')}<br>"
+            f"土地利用第二級分類：{row.get('LCODE_C2', '')} {row.get('C2_NAME', '')}<br>"
+            f"土地利用第三級分類：{row.get('LCODE_C3', '')} {row.get('C3_NAME', '')}<br>"
             f"經度：{res_lon:.2f}<br>"
             f"緯度：{res_lat:.2f}<br><br>"
             f"{medical_text_normal}<br><br>"
