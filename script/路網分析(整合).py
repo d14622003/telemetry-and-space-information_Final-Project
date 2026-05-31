@@ -2062,14 +2062,14 @@ hazard_popup = folium.GeoJsonPopup(
 
 hazard_tooltip = folium.GeoJsonTooltip(
     fields=["TOWNNAME", "VILLNAME", "hazard_norm_Q100"],
-    aliases=["鄉鎮市區", "村里", "危害度"],
+    aliases=["鄉鎮市區", "村里", "危害度(道路淹水)"],
     localize=True,
     sticky=False
 )
 
 hazard_layer = folium.GeoJson(
     data=population_gdf,
-    name="危害度",
+    name="危害度(道路淹水)",
     style_function=hazard_ratio_style_function,
     popup=hazard_popup,
     tooltip=hazard_tooltip,
@@ -2096,7 +2096,7 @@ hazard_legend_html = f"""
     font-size: 13px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 ">
-    <div style="font-weight:700; margin-bottom:10px;">危害度</div>
+    <div style="font-weight:700; margin-bottom:10px;">危害度(道路淹水)</div>
     {hazard_ratio_items_html}
 </div>
 """
