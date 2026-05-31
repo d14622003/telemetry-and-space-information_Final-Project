@@ -2189,6 +2189,121 @@ vulnerability_layer = folium.GeoJson(
 )
 vulnerability_layer.add_to(population_map_discrete)
 
+population_gdf["risk_Q100"] = np.where(
+    population_gdf[["hazard_norm_Q100", "exposure_norm", "vulnerability_avg_Q100"]].notna().all(axis=1),
+    (
+        population_gdf["hazard_norm_Q100"]
+        + population_gdf["exposure_norm"]
+        + population_gdf["vulnerability_avg_Q100"]
+    ) / 3,
+    np.nan
+)
+
+risk_bins = np.linspace(0, 1, 6)
+risk_colors = [
+    "#ffffcc",
+    "#fed976",
+    "#feb24c",
+    "#fd8d3c",
+    "#bd0026",
+]
+
+
+def risk_style_function(feature):
+    risk_value = feature["properties"].get("risk_Q100")
+    if risk_value is None or pd.isna(risk_value):
+        return {
+            "fillColor": "#bdbdbd",
+            "color": "#666666",
+            "weight": 0.8,
+            "fillOpacity": 0.75,
+        }
+
+    color_idx = np.digitize([risk_value], risk_bins[1:-1], right=False)[0]
+    return {
+        "fillColor": risk_colors[color_idx],
+        "color": "#404040",
+        "weight": 0.8,
+        "fillOpacity": 0.75,
+    }
+
+
+risk_legend_items = []
+for idx, color in enumerate(risk_colors):
+    lower = risk_bins[idx]
+    upper = risk_bins[idx + 1]
+    label = f"{lower:.2f} - {upper:.2f}"
+    risk_legend_items.append((color, label))
+
+risk_items_html = "".join(
+    [
+        (
+            "<div style='display:flex; align-items:center; margin-bottom:6px;'>"
+            f"<span style='display:inline-block; width:18px; height:12px; background:{color}; "
+            "border:1px solid #666; margin-right:8px;'></span>"
+            f"<span>{label}</span>"
+            "</div>"
+        )
+        for color, label in risk_legend_items
+    ]
+)
+risk_items_html += (
+    "<div style='display:flex; align-items:center; margin-bottom:6px;'>"
+    "<span style='display:inline-block; width:18px; height:12px; background:#bdbdbd; "
+    "border:1px solid #666; margin-right:8px;'></span>"
+    "<span>無資料</span>"
+    "</div>"
+)
+
+risk_popup = folium.GeoJsonPopup(
+    fields=["COUNTYNAME", "TOWNNAME", "VILLNAME", "hazard_norm_Q100", "exposure_norm", "vulnerability_avg_Q100", "risk_Q100"],
+    aliases=["縣市", "鄉鎮市區", "村里", "危害度(道路淹水)", "暴露度(總人口數)", "脆弱度(醫療、避難可及性-Q100)", "風險"],
+    localize=True,
+    labels=True,
+    style="background-color: white;"
+)
+
+risk_tooltip = folium.GeoJsonTooltip(
+    fields=["TOWNNAME", "VILLNAME", "risk_Q100"],
+    aliases=["鄉鎮市區", "村里", "風險"],
+    localize=True,
+    sticky=False
+)
+
+risk_layer = folium.GeoJson(
+    data=population_gdf,
+    name="風險(脆弱度、危害度、暴露度)",
+    style_function=risk_style_function,
+    popup=risk_popup,
+    tooltip=risk_tooltip,
+    highlight_function=lambda _: {
+        "weight": 2.0,
+        "color": "#252525",
+        "fillOpacity": 0.85,
+    },
+)
+risk_layer.add_to(population_map_discrete)
+
+risk_legend_html = f"""
+<div id="risk-legend" style="
+    display:none;
+    position: fixed;
+    bottom: 625px;
+    left: 40px;
+    width: 220px;
+    z-index: 9999;
+    background: white;
+    border: 2px solid #666;
+    border-radius: 6px;
+    padding: 12px 12px 10px 12px;
+    font-size: 13px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+">
+    <div style="font-weight:700; margin-bottom:10px;">風險(脆弱度、危害度、暴露度)</div>
+    {risk_items_html}
+</div>
+"""
+
 vulnerability_legend_html = f"""
 <div id="vulnerability-legend" style="
     display:none;
@@ -2212,6 +2327,7 @@ vulnerability_legend_html = f"""
 legend_control_html = f"""
 {{% macro html(this, kwargs) %}}
 {flood_potential_legend_html}
+{risk_legend_html}
 {hazard_legend_html}
 {vulnerability_legend_html}
 {population_legend_html}
@@ -2219,10 +2335,12 @@ legend_control_html = f"""
 document.addEventListener("DOMContentLoaded", function() {{
     var map = {population_map_discrete.get_name()};
     var floodPotentialLegend = document.getElementById("flood-potential-legend");
+    var riskLegend = document.getElementById("risk-legend");
     var hazardLegend = document.getElementById("hazard-legend");
     var vulnerabilityLegend = document.getElementById("vulnerability-legend");
     var exposureLegend = document.getElementById("exposure-legend");
     var floodPotentialLayer = {flood_potential_layer.get_name()};
+    var riskLayer = {risk_layer.get_name()};
     var hazardLayer = {hazard_layer.get_name()};
     var exposureLayer = {exposure_layer.get_name()};
     var vulnerabilityLayer = {vulnerability_layer.get_name()};
@@ -2230,6 +2348,9 @@ document.addEventListener("DOMContentLoaded", function() {{
     function updateLegendByLayer(layer, visible) {{
         if (layer === floodPotentialLayer && floodPotentialLegend) {{
             floodPotentialLegend.style.display = visible ? "block" : "none";
+        }}
+        if (layer === riskLayer && riskLegend) {{
+            riskLegend.style.display = visible ? "block" : "none";
         }}
         if (layer === hazardLayer && hazardLegend) {{
             hazardLegend.style.display = visible ? "block" : "none";
@@ -2243,6 +2364,7 @@ document.addEventListener("DOMContentLoaded", function() {{
     }}
 
     updateLegendByLayer(floodPotentialLayer, map.hasLayer(floodPotentialLayer));
+    updateLegendByLayer(riskLayer, map.hasLayer(riskLayer));
     updateLegendByLayer(hazardLayer, map.hasLayer(hazardLayer));
     updateLegendByLayer(vulnerabilityLayer, map.hasLayer(vulnerabilityLayer));
     updateLegendByLayer(exposureLayer, map.hasLayer(exposureLayer));
