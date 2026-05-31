@@ -845,7 +845,7 @@ def add_flood_raster_to_folium(
     return m
 
 
-def add_flood_legend_to_folium(m, title="Flood Potential (m)"):
+def add_flood_legend_to_folium(m, flood_layer, title="Flood Potential (m)", legend_id="scenario-flood-legend"):
     legend_items = [
         ("#fff5f0", "0 - 0.05 m"),
         ("#fcbba1", "0.05 - 0.10 m"),
@@ -869,7 +869,8 @@ def add_flood_legend_to_folium(m, title="Flood Potential (m)"):
 
     legend_html = f"""
     {{% macro html(this, kwargs) %}}
-    <div style="
+    <div id="{legend_id}" style="
+        display:none;
         position: fixed;
         bottom: 40px;
         left: 40px;
@@ -885,6 +886,30 @@ def add_flood_legend_to_folium(m, title="Flood Potential (m)"):
         <div style="font-weight:700; margin-bottom:10px;">{title}</div>
         {items_html}
     </div>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {{
+        var map = {m.get_name()};
+        var floodLayer = {flood_layer.get_name()};
+        var legend = document.getElementById("{legend_id}");
+
+        function syncLegend() {{
+            if (!legend) return;
+            legend.style.display = map.hasLayer(floodLayer) ? "block" : "none";
+        }}
+
+        syncLegend();
+        map.on("overlayadd", function(e) {{
+            if (e.layer === floodLayer) {{
+                syncLegend();
+            }}
+        }});
+        map.on("overlayremove", function(e) {{
+            if (e.layer === floodLayer) {{
+                syncLegend();
+            }}
+        }});
+    }});
+    </script>
     {{% endmacro %}}
     """
 
@@ -1267,7 +1292,7 @@ def build_scenario_map(
     center = study_area_wgs84.geometry.union_all().centroid
     m = folium.Map(location=[center.y, center.x], zoom_start=12, tiles="OpenStreetMap")
 
-    m = add_flood_raster_to_folium(
+    flood_overlay = add_flood_raster_to_folium(
         m=m,
         tif_path=flood_tif_path,
         layer_name=f"{scenario_name} Flood Potential Map",
@@ -1275,10 +1300,12 @@ def build_scenario_map(
         vmax=1,
         opacity=0.8,
         show=True,
-        add_colorbar=False
+        add_colorbar=False,
+        return_layer=True
     )
     m = add_flood_legend_to_folium(
         m,
+        flood_overlay,
         title=f"Flood Potential (m)<br>Scenario: {scenario_name}"
     )
 
