@@ -17,7 +17,7 @@ output_dir.mkdir(exist_ok=True)
 
 # Scenario and accessibility settings
 scenario_names = ["Q1point1", "Q10", "Q25", "Q50", "Q100"]
-max_accept_time_medical = 30
+max_accept_time_medical = 20
 max_accept_time_shelter = 20
 
 twd97_crs = "EPSG:3826"  # TWD97 / TM2
@@ -1711,11 +1711,24 @@ population_quantiles = np.quantile(
     population_gdf[population_value_col].to_numpy(),
     np.linspace(0, 1, 6)
 )
-population_bins = np.round(population_quantiles, 2)
+
+def round_to_preferred_population_break(value):
+    return int(5 * round(float(value) / 5))
+
+population_bins = np.array(
+    [round_to_preferred_population_break(value) for value in population_quantiles],
+    dtype=float
+)
 
 for i in range(1, len(population_bins)):
     if population_bins[i] <= population_bins[i - 1]:
-        population_bins[i] = population_bins[i - 1] + 0.01
+        population_bins[i] = population_bins[i - 1] + 5
+
+if population_bins[0] > population_min:
+    population_bins[0] = int(5 * np.floor(population_min / 5))
+
+if population_bins[-1] < population_max:
+    population_bins[-1] = int(5 * np.ceil(population_max / 5))
 
 population_colors = [
     "#fff5eb",
@@ -1751,12 +1764,9 @@ def population_style_function_discrete(feature):
 
 population_legend_items = []
 for idx, color in enumerate(population_colors):
-    lower = population_bins[idx]
-    upper = population_bins[idx + 1]
-    if idx == len(population_colors) - 1:
-        label = f"{lower:,.2f} - {upper:,.2f}"
-    else:
-        label = f"{lower:,.2f} - {upper:,.2f}"
+    lower = int(population_bins[idx])
+    upper = int(population_bins[idx + 1])
+    label = f"{lower:,} - {upper:,}"
     population_legend_items.append((color, label))
 
 population_items_html = "".join(
@@ -1776,7 +1786,7 @@ population_legend_html = f"""
 <div id="exposure-legend" style="
     display:none;
     position: fixed;
-    bottom: 30px;
+    bottom: 235px;
     left: 40px;
     width: 220px;
     z-index: 9999;
@@ -1887,7 +1897,7 @@ hazard_legend_html = """
 <div id="hazard-legend" style="
     display:none;
     position: fixed;
-    bottom: 370px;
+    bottom: 440px;
     left: 40px;
     width: 220px;
     z-index: 9999;
@@ -1940,10 +1950,10 @@ def vulnerability_style_function(feature):
     vulnerability_value = feature["properties"].get("vulnerability_avg_Q100")
     if vulnerability_value is None or pd.isna(vulnerability_value):
         return {
-            "fillColor": "transparent",
+            "fillColor": "#bdbdbd",
             "color": "#666666",
             "weight": 0.8,
-            "fillOpacity": 0.0,
+            "fillOpacity": 0.75,
         }
 
     color_idx = np.digitize([vulnerability_value], vulnerability_bins[1:-1], right=False)[0]
@@ -1972,6 +1982,13 @@ vulnerability_items_html = "".join(
         )
         for color, label in vulnerability_legend_items
     ]
+)
+vulnerability_items_html += (
+    "<div style='display:flex; align-items:center; margin-bottom:6px;'>"
+    "<span style='display:inline-block; width:18px; height:12px; background:#bdbdbd; "
+    "border:1px solid #666; margin-right:8px;'></span>"
+    "<span>無住宅點</span>"
+    "</div>"
 )
 
 vulnerability_popup = folium.GeoJsonPopup(
@@ -2007,7 +2024,7 @@ vulnerability_legend_html = f"""
 <div id="vulnerability-legend" style="
     display:none;
     position: fixed;
-    bottom: 200px;
+    bottom: 30px;
     left: 40px;
     width: 220px;
     z-index: 9999;
