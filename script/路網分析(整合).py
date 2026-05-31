@@ -1879,18 +1879,7 @@ population_gdf["residential_point_count"] = population_gdf.index.map(
     vulnerability_stats["residential_point_count"]
 )
 
-valid_vulnerability = population_gdf["vulnerability_avg_Q100"].dropna()
-if valid_vulnerability.empty:
-    vulnerability_min = 0.0
-    vulnerability_max = 1.0
-else:
-    vulnerability_min = float(valid_vulnerability.min())
-    vulnerability_max = float(valid_vulnerability.max())
-
-if vulnerability_min == vulnerability_max:
-    vulnerability_max = vulnerability_min + 0.000001
-
-vulnerability_bins = np.linspace(vulnerability_min, vulnerability_max, 6)
+vulnerability_bins = np.linspace(0, 1, 6)
 vulnerability_colors = [
     "#f7fcf0",
     "#ccebc5",
@@ -2353,6 +2342,33 @@ document.addEventListener("DOMContentLoaded", function() {{
     var exposureLayer = {exposure_layer.get_name()};
     var vulnerabilityLayer = {vulnerability_layer.get_name()};
 
+    function updateLegendLayout() {{
+        var gap = 30;
+        var bottomStart = 30;
+
+        var leftLegends = [vulnerabilityLegend, exposureLegend, hazardLegend];
+        var leftBottom = bottomStart;
+        leftLegends.forEach(function(legend) {{
+            if (legend && legend.style.display !== "none") {{
+                legend.style.left = "40px";
+                legend.style.right = "";
+                legend.style.bottom = leftBottom + "px";
+                leftBottom += legend.offsetHeight + gap;
+            }}
+        }});
+
+        var rightLegends = [floodPotentialLegend, riskLegend];
+        var rightBottom = bottomStart;
+        rightLegends.forEach(function(legend) {{
+            if (legend && legend.style.display !== "none") {{
+                legend.style.right = "40px";
+                legend.style.left = "";
+                legend.style.bottom = rightBottom + "px";
+                rightBottom += legend.offsetHeight + gap;
+            }}
+        }});
+    }}
+
     function updateLegendByLayer(layer, visible) {{
         if (layer === floodPotentialLayer && floodPotentialLegend) {{
             floodPotentialLegend.style.display = visible ? "block" : "none";
@@ -2369,6 +2385,7 @@ document.addEventListener("DOMContentLoaded", function() {{
         if (layer === exposureLayer && exposureLegend) {{
             exposureLegend.style.display = visible ? "block" : "none";
         }}
+        updateLegendLayout();
     }}
 
     updateLegendByLayer(floodPotentialLayer, map.hasLayer(floodPotentialLayer));
@@ -2376,6 +2393,7 @@ document.addEventListener("DOMContentLoaded", function() {{
     updateLegendByLayer(hazardLayer, map.hasLayer(hazardLayer));
     updateLegendByLayer(vulnerabilityLayer, map.hasLayer(vulnerabilityLayer));
     updateLegendByLayer(exposureLayer, map.hasLayer(exposureLayer));
+    updateLegendLayout();
 
     map.on("overlayadd", function(e) {{
         if (e.layer) {{
