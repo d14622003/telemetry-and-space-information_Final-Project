@@ -488,8 +488,8 @@ for idx, row in shelters_wgs84.iterrows():
         f"Applicable Disaster Type: {row.get('適用災害類別', '')}<br>"
         f"Manager: {row.get('管理人姓名', '')}<br>"
         f"Manager Phone: {row.get('管理人電話', '')}<br>"
-        f"Longitude: {row.get('經度', '')}<br>"
-        f"Latitude: {row.get('緯度', '')}"
+        f"Longitude: {format_coord(row.get('經度', np.nan))}<br>"
+        f"Latitude: {format_coord(row.get('緯度', np.nan))}"
     )
 
     folium.CircleMarker(
@@ -1115,6 +1115,12 @@ def calc_accessibility_score(travel_time, max_acceptable_time):
     return max(0.0, score)
 
 
+def format_coord(value):
+    if pd.isna(value):
+        return ""
+    return f"{float(value):.5f}"
+
+
 def add_residential_popup_layers(
     m,
     residential_result_wgs84,
@@ -1133,6 +1139,8 @@ def add_residential_popup_layers(
     for _, row in residential_result_wgs84.iterrows():
         res_lon = row.geometry.x
         res_lat = row.geometry.y
+        res_lon_str = format_coord(res_lon)
+        res_lat_str = format_coord(res_lat)
 
         med_score_normal = row.get("medical_access_score_normal", 0.0)
         shel_score_normal = row.get("shelter_access_score_normal", 0.0)
@@ -1160,8 +1168,8 @@ def add_residential_popup_layers(
             medical_row = medical_lookup.loc[row["nearest_medical_id"]]
             medical_text_normal = (
                 f"Normal Scenario Nearest Medical ID: {row['nearest_medical_id']}<br>"
-                f"Longitude: {medical_row.geometry.x}<br>"
-                f"Latitude: {medical_row.geometry.y}<br>"
+                f"Longitude: {format_coord(medical_row.geometry.x)}<br>"
+                f"Latitude: {format_coord(medical_row.geometry.y)}<br>"
                 f"Fastest Passable Time: {row['time_to_medical_min']:.2f} min<br>"
                 f"Normal Scenario Medical Accessibility Score: {med_score_normal:.2f}"
             )
@@ -1170,8 +1178,8 @@ def add_residential_popup_layers(
             shelter_row = shelter_lookup.loc[row["nearest_shelter_id"]]
             shelter_text_normal = (
                 f"Normal Scenario Nearest Shelter ID: {row['nearest_shelter_id']}<br>"
-                f"Longitude: {shelter_row.geometry.x}<br>"
-                f"Latitude: {shelter_row.geometry.y}<br>"
+                f"Longitude: {format_coord(shelter_row.geometry.x)}<br>"
+                f"Latitude: {format_coord(shelter_row.geometry.y)}<br>"
                 f"Fastest Passable Time: {row['time_to_shelter_min']:.2f} min<br>"
                 f"Normal Scenario Shelter Accessibility Score: {shel_score_normal:.2f}"
             )
@@ -1180,8 +1188,8 @@ def add_residential_popup_layers(
             medical_row_s = medical_lookup.loc[row[medical_id_col]]
             medical_text_scenario = (
                 f"{scenario_name} Scenario Nearest Medical ID: {row[medical_id_col]}<br>"
-                f"Longitude: {medical_row_s.geometry.x}<br>"
-                f"Latitude: {medical_row_s.geometry.y}<br>"
+                f"Longitude: {format_coord(medical_row_s.geometry.x)}<br>"
+                f"Latitude: {format_coord(medical_row_s.geometry.y)}<br>"
                 f"Fastest Passable Time: {row[medical_time_col]:.2f} min<br>"
                 f"{scenario_name} Scenario Medical Accessibility Score: {med_score_scenario:.2f}"
             )
@@ -1190,8 +1198,8 @@ def add_residential_popup_layers(
             shelter_row_s = shelter_lookup.loc[row[shelter_id_col]]
             shelter_text_scenario = (
                 f"{scenario_name} Scenario Nearest Shelter ID: {row[shelter_id_col]}<br>"
-                f"Longitude: {shelter_row_s.geometry.x}<br>"
-                f"Latitude: {shelter_row_s.geometry.y}<br>"
+                f"Longitude: {format_coord(shelter_row_s.geometry.x)}<br>"
+                f"Latitude: {format_coord(shelter_row_s.geometry.y)}<br>"
                 f"Fastest Passable Time: {row[shelter_time_col]:.2f} min<br>"
                 f"{scenario_name} Scenario Shelter Accessibility Score: {shel_score_scenario:.2f}"
             )
@@ -1201,8 +1209,8 @@ def add_residential_popup_layers(
             f"Land Use Level 1: {row.get('LCODE_C1', '')} {row.get('C1_NAME', '')}<br>"
             f"Land Use Level 2: {row.get('LCODE_C2', '')} {row.get('C2_NAME', '')}<br>"
             f"Land Use Level 3: {row.get('LCODE_C3', '')} {row.get('C3_NAME', '')}<br>"
-            f"Longitude: {res_lon}<br>"
-            f"Latitude: {res_lat}<br><br>"
+            f"Longitude: {res_lon_str}<br>"
+            f"Latitude: {res_lat_str}<br><br>"
             f"{medical_text_normal}<br><br>"
             f"{medical_text_scenario}<br><br>"
             f"{shelter_text_normal}<br><br>"
@@ -1412,8 +1420,8 @@ def build_scenario_map(
             f"Land Use Level 1: {row.get('LCODE_C1', '')} {row.get('C1_NAME', '')}<br>"
             f"Land Use Level 2: {row.get('LCODE_C2', '')} {row.get('C2_NAME', '')}<br>"
             f"Land Use Level 3: {row.get('LCODE_C3', '')} {row.get('C3_NAME', '')}<br>"
-            f"Longitude: {row.geometry.x}<br>"
-            f"Latitude: {row.geometry.y}"
+            f"Longitude: {format_coord(row.geometry.x)}<br>"
+            f"Latitude: {format_coord(row.geometry.y)}"
         )
         folium.CircleMarker(
             location=[row.geometry.y, row.geometry.x],
@@ -1441,8 +1449,8 @@ def build_scenario_map(
         for field_name, field_label in shelter_popup_fields:
             if field_name in row.index:
                 popup_lines.append(f"{field_label}: {row.get(field_name, '')}")
-        popup_lines.append(f"Longitude: {row.geometry.x}")
-        popup_lines.append(f"Latitude: {row.geometry.y}")
+        popup_lines.append(f"Longitude: {format_coord(row.geometry.x)}")
+        popup_lines.append(f"Latitude: {format_coord(row.geometry.y)}")
         popup_text = "<br>".join(popup_lines)
 
         folium.CircleMarker(
@@ -2334,6 +2342,19 @@ legend_control_html = f"""
 {hazard_legend_html}
 {vulnerability_legend_html}
 {population_legend_html}
+<style>
+    .leaflet-popup-content table {{
+        width: auto !important;
+    }}
+    .leaflet-popup-content th,
+    .leaflet-popup-content td {{
+        white-space: nowrap !important;
+        vertical-align: top;
+    }}
+    .leaflet-popup-content th {{
+        padding-right: 12px;
+    }}
+</style>
 <script>
 document.addEventListener("DOMContentLoaded", function() {{
     var map = {population_map_discrete.get_name()};
