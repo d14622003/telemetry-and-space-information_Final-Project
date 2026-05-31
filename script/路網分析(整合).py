@@ -1927,6 +1927,23 @@ population_gdf["hazard_ratio_Q100"] = np.where(
     np.nan
 )
 
+valid_hazard_ratio = population_gdf["hazard_ratio_Q100"].dropna()
+if valid_hazard_ratio.empty:
+    hazard_ratio_min = 0.0
+    hazard_ratio_max = 1.0
+else:
+    hazard_ratio_min = float(valid_hazard_ratio.min())
+    hazard_ratio_max = float(valid_hazard_ratio.max())
+
+if hazard_ratio_min == hazard_ratio_max:
+    hazard_ratio_max = hazard_ratio_min + 0.000001
+
+population_gdf["hazard_norm_Q100"] = np.where(
+    population_gdf["hazard_ratio_Q100"].notna(),
+    (population_gdf["hazard_ratio_Q100"] - hazard_ratio_min) / (hazard_ratio_max - hazard_ratio_min),
+    np.nan
+)
+
 hazard_ratio_bins = np.linspace(0, 1, 6)
 hazard_ratio_colors = [
     "#ffffcc",
@@ -1938,7 +1955,7 @@ hazard_ratio_colors = [
 
 
 def hazard_ratio_style_function(feature):
-    hazard_ratio_value = feature["properties"].get("hazard_ratio_Q100")
+    hazard_ratio_value = feature["properties"].get("hazard_norm_Q100")
     if hazard_ratio_value is None or pd.isna(hazard_ratio_value):
         return {
             "fillColor": "transparent",
@@ -1990,8 +2007,8 @@ flood_potential_legend_html = """
 <div id="flood-potential-legend" style="
     display:none;
     position: fixed;
-    bottom: 625px;
-    left: 40px;
+    bottom: 30px;
+    right: 40px;
     width: 220px;
     z-index: 9999;
     background: white;
@@ -2026,15 +2043,15 @@ flood_potential_legend_html = """
 """
 
 hazard_popup = folium.GeoJsonPopup(
-    fields=["COUNTYNAME", "TOWNNAME", "VILLNAME", "blocked_road_length_m_Q100", "total_road_length_m_Q100", "hazard_ratio_Q100"],
-    aliases=["縣市", "鄉鎮市區", "村里", "無法通行路段長度(m)", "全路段長度(m)", "危害度"],
+    fields=["COUNTYNAME", "TOWNNAME", "VILLNAME", "blocked_road_length_m_Q100", "total_road_length_m_Q100", "hazard_ratio_Q100", "hazard_norm_Q100"],
+    aliases=["縣市", "鄉鎮市區", "村里", "無法通行路段長度(m)", "全路段長度(m)", "危害度原始比例", "危害度(正規化)"],
     localize=True,
     labels=True,
     style="background-color: white;"
 )
 
 hazard_tooltip = folium.GeoJsonTooltip(
-    fields=["TOWNNAME", "VILLNAME", "hazard_ratio_Q100"],
+    fields=["TOWNNAME", "VILLNAME", "hazard_norm_Q100"],
     aliases=["鄉鎮市區", "村里", "危害度"],
     localize=True,
     sticky=False
