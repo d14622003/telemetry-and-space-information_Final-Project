@@ -17,8 +17,8 @@ output_dir.mkdir(exist_ok=True)
 
 # Scenario and accessibility settings
 scenario_names = ["Q1point1", "Q10", "Q25", "Q50", "Q100"]
-max_accept_time_medical = 20
-max_accept_time_shelter = 20
+max_accept_time_medical = 15
+max_accept_time_shelter = 15
 
 twd97_crs = "EPSG:3826"  # TWD97 / TM2
 wgs84 = "EPSG:4326"  # WGS84
@@ -1897,7 +1897,7 @@ hazard_legend_html = """
 <div id="hazard-legend" style="
     display:none;
     position: fixed;
-    bottom: 440px;
+    bottom: 425px;
     left: 40px;
     width: 220px;
     z-index: 9999;
@@ -2008,7 +2008,7 @@ vulnerability_tooltip = folium.GeoJsonTooltip(
 
 vulnerability_layer = folium.GeoJson(
     data=population_gdf,
-    name="脆弱度(醫療、避難可及性)",
+    name="脆弱度(醫療、避難可及性-Q100)",
     style_function=vulnerability_style_function,
     popup=vulnerability_popup,
     tooltip=vulnerability_tooltip,
@@ -2035,7 +2035,7 @@ vulnerability_legend_html = f"""
     font-size: 13px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 ">
-    <div style="font-weight:700; margin-bottom:10px;">脆弱度(醫療、避難可及性)</div>
+    <div style="font-weight:700; margin-bottom:10px;">脆弱度(醫療、避難可及性-Q100)</div>
     {vulnerability_items_html}
 </div>
 """
