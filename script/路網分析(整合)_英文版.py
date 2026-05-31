@@ -2263,7 +2263,7 @@ risk_popup = folium.GeoJsonPopup(
     aliases=["County", "Township", "Village", "Hazard (Road Flooding)", "Exposure (Total Population)", "Vulnerability (Medical and Shelter Accessibility - Q100)", "Risk"],
     localize=True,
     labels=True,
-    style="background-color: white;"
+    style="background-color: white; width: 320px; white-space: normal;"
 )
 
 risk_tooltip = folium.GeoJsonTooltip(
@@ -2350,10 +2350,11 @@ document.addEventListener("DOMContentLoaded", function() {{
 
     function updateLegendLayout() {{
         var gap = 18;
-        var bottomStart = 30;
+        var leftBottomStart = 55;
+        var rightBottomStart = 30;
 
         var leftLegends = [vulnerabilityLegend, exposureLegend, hazardLegend];
-        var leftBottom = bottomStart;
+        var leftBottom = leftBottomStart;
         leftLegends.forEach(function(legend) {{
             if (legend && legend.style.display !== "none") {{
                 legend.style.left = "40px";
@@ -2364,7 +2365,7 @@ document.addEventListener("DOMContentLoaded", function() {{
         }});
 
         var rightLegends = [floodPotentialLegend, riskLegend];
-        var rightBottom = bottomStart;
+        var rightBottom = rightBottomStart;
         rightLegends.forEach(function(legend) {{
             if (legend && legend.style.display !== "none") {{
                 legend.style.right = "40px";
