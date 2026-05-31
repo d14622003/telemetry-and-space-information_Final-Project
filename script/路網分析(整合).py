@@ -1666,14 +1666,15 @@ if population_min == population_max:
     population_max = population_min + 1
 
 #%% 建立暴露度分級地圖
-population_bins = np.linspace(population_min, population_max, 6)
-population_bins = np.round(population_bins).astype(int)
-population_bins[0] = int(np.floor(population_min))
-population_bins[-1] = int(np.ceil(population_max))
+population_quantiles = np.quantile(
+    population_gdf[population_value_col].to_numpy(),
+    np.linspace(0, 1, 6)
+)
+population_bins = np.round(population_quantiles, 2)
 
 for i in range(1, len(population_bins)):
     if population_bins[i] <= population_bins[i - 1]:
-        population_bins[i] = population_bins[i - 1] + 1
+        population_bins[i] = population_bins[i - 1] + 0.01
 
 population_colors = [
     "#fff5eb",
@@ -1712,9 +1713,9 @@ for idx, color in enumerate(population_colors):
     lower = population_bins[idx]
     upper = population_bins[idx + 1]
     if idx == len(population_colors) - 1:
-        label = f"{lower:,} - {upper:,}"
+        label = f"{lower:,.2f} - {upper:,.2f}"
     else:
-        label = f"{lower:,} - {upper - 1:,}"
+        label = f"{lower:,.2f} - {upper:,.2f}"
     population_legend_items.append((color, label))
 
 population_items_html = "".join(
@@ -1734,7 +1735,7 @@ population_legend_html = f"""
 <div id="exposure-legend" style="
     display:none;
     position: fixed;
-    bottom: 40px;
+    bottom: 30px;
     left: 40px;
     width: 220px;
     z-index: 9999;
@@ -1845,7 +1846,7 @@ hazard_legend_html = """
 <div id="hazard-legend" style="
     display:none;
     position: fixed;
-    bottom: 460px;
+    bottom: 370px;
     left: 40px;
     width: 220px;
     z-index: 9999;
@@ -1965,7 +1966,7 @@ vulnerability_legend_html = f"""
 <div id="vulnerability-legend" style="
     display:none;
     position: fixed;
-    bottom: 250px;
+    bottom: 200px;
     left: 40px;
     width: 220px;
     z-index: 9999;
