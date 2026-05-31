@@ -2288,8 +2288,8 @@ risk_legend_html = f"""
 <div id="risk-legend" style="
     display:none;
     position: fixed;
-    bottom: 625px;
-    left: 40px;
+    bottom: 255px;
+    right: 40px;
     width: 220px;
     z-index: 9999;
     background: white;
