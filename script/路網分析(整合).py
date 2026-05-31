@@ -1602,9 +1602,9 @@ for scenario_name in scenario_names:
         shelter_score_scenario_col=shelter_score_scenario_col
     )
 
-    html_path = output_dir / f"{scenario_name}_整合可及性與道路淹水地圖.html"
+    html_path = output_dir / f"{scenario_name}_路網分析互動地圖.html"
     m.save(html_path)
-    print("已輸出整合可及性與道路淹水地圖：", html_path.resolve())
+    print("已輸出路網分析互動地圖：", html_path.resolve())
 
     scenario_cols = [
         "origin_id",
