@@ -23,6 +23,12 @@ max_accept_time_shelter = 60
 twd97_crs = "EPSG:3826"  # TWD97 / TM2
 wgs84 = "EPSG:4326"  # WGS84
 
+
+def format_coord(value):
+    if pd.isna(value):
+        return ""
+    return f"{float(value):.5f}"
+
 lu_gdf = gpd.read_file("../data/11_港口溪流域/01_土地利用/2007_LU.shp")
 
 # Set CRS if missing, then normalize to EPSG:3826 for centroid and network analysis.
@@ -1113,12 +1119,6 @@ def calc_accessibility_score(travel_time, max_acceptable_time):
 
     score = 1 - (travel_time / max_acceptable_time)
     return max(0.0, score)
-
-
-def format_coord(value):
-    if pd.isna(value):
-        return ""
-    return f"{float(value):.5f}"
 
 
 def add_residential_popup_layers(
