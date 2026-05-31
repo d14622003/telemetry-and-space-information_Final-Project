@@ -1828,10 +1828,10 @@ population_popup = folium.GeoJsonPopup(
 )
 
 population_tooltip = folium.GeoJsonTooltip(
-    fields=["TOWNNAME", "VILLNAME", population_value_col],
-    aliases=["鄉鎮市區", "村里", "總人口數"],
+    fields=["COUNTYNAME", "TOWNNAME", "VILLNAME", population_value_col, "exposure_display"],
+    aliases=["縣市", "鄉鎮市區", "村里", "總人口數", "暴露度指標"],
     localize=True,
-    sticky=False
+    sticky=True
 )
 
 if "comparison_df" not in locals():
@@ -2064,10 +2064,10 @@ hazard_popup = folium.GeoJsonPopup(
 )
 
 hazard_tooltip = folium.GeoJsonTooltip(
-    fields=["TOWNNAME", "VILLNAME", "hazard_norm_Q100"],
-    aliases=["鄉鎮市區", "村里", "危害度(道路淹水)"],
+    fields=["COUNTYNAME", "TOWNNAME", "VILLNAME", "blocked_road_length_m_Q100", "total_road_length_m_Q100", "hazard_display_Q100", "hazard_ratio_display_Q100"],
+    aliases=["縣市", "鄉鎮市區", "村里", "無法通行路段長度(m)", "全路段長度(m)", "危害度指標", "淹水路段比例"],
     localize=True,
-    sticky=False
+    sticky=True
 )
 
 hazard_layer = folium.GeoJson(
@@ -2172,10 +2172,10 @@ vulnerability_popup = folium.GeoJsonPopup(
 )
 
 vulnerability_tooltip = folium.GeoJsonTooltip(
-    fields=["TOWNNAME", "VILLNAME", "vulnerability_avg_Q100"],
-    aliases=["鄉鎮市區", "村里", "Q100 平均脆弱度"],
+    fields=["COUNTYNAME", "TOWNNAME", "VILLNAME", "vulnerability_avg_Q100", "residential_point_count"],
+    aliases=["縣市", "鄉鎮市區", "村里", "Q100 平均脆弱度", "住宅點數量"],
     localize=True,
-    sticky=False
+    sticky=True
 )
 
 vulnerability_layer = folium.GeoJson(
@@ -2267,10 +2267,10 @@ risk_popup = folium.GeoJsonPopup(
 )
 
 risk_tooltip = folium.GeoJsonTooltip(
-    fields=["TOWNNAME", "VILLNAME", "risk_Q100"],
-    aliases=["鄉鎮市區", "村里", "風險"],
+    fields=["COUNTYNAME", "TOWNNAME", "VILLNAME", "hazard_norm_Q100", "exposure_norm", "vulnerability_avg_Q100", "risk_Q100"],
+    aliases=["縣市", "鄉鎮市區", "村里", "危害度(道路淹水)", "暴露度(總人口數)", "脆弱度(醫療、避難可及性-Q100)", "風險"],
     localize=True,
-    sticky=False
+    sticky=True
 )
 
 risk_layer = folium.GeoJson(
