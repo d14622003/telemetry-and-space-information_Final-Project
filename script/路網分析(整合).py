@@ -17,8 +17,8 @@ output_dir.mkdir(exist_ok=True)
 
 # Scenario and accessibility settings
 scenario_names = ["Q1point1", "Q10", "Q25", "Q50", "Q100"]
-max_accept_time_medical = 15
-max_accept_time_shelter = 15
+max_accept_time_medical = 60
+max_accept_time_shelter = 60
 
 twd97_crs = "EPSG:3826"  # TWD97 / TM2
 wgs84 = "EPSG:4326"  # WGS84
@@ -1836,9 +1836,11 @@ vulnerability_points_3826 = gpd.GeoDataFrame(
 )
 vulnerability_points_wgs84 = vulnerability_points_3826.to_crs(wgs84)
 vulnerability_points_wgs84["vulnerability_score_Q100"] = (
-    vulnerability_points_wgs84["medical_access_score_Q100"].fillna(0)
-    + vulnerability_points_wgs84["shelter_access_score_Q100"].fillna(0)
-) / 2
+    1 - (
+        vulnerability_points_wgs84["medical_access_score_Q100"].fillna(0)
+        + vulnerability_points_wgs84["shelter_access_score_Q100"].fillna(0)
+    ) / 2
+).clip(lower=0.0, upper=1.0)
 
 vulnerability_join = gpd.sjoin(
     vulnerability_points_wgs84[["vulnerability_score_Q100", "geometry"]],
