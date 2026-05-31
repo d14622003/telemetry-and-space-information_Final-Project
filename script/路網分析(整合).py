@@ -1160,8 +1160,8 @@ def add_residential_popup_layers(
             medical_row = medical_lookup.loc[row["nearest_medical_id"]]
             medical_text_normal = (
                 f"一般情境最近醫療 ID：{row['nearest_medical_id']}<br>"
-                f"經度：{medical_row.geometry.x:.2f}<br>"
-                f"緯度：{medical_row.geometry.y:.2f}<br>"
+                f"經度：{medical_row.geometry.x}<br>"
+                f"緯度：{medical_row.geometry.y}<br>"
                 f"最快通行時間：{row['time_to_medical_min']:.2f} 分鐘<br>"
                 f"一般情境醫療可及性分數：{med_score_normal:.2f}"
             )
@@ -1170,8 +1170,8 @@ def add_residential_popup_layers(
             shelter_row = shelter_lookup.loc[row["nearest_shelter_id"]]
             shelter_text_normal = (
                 f"一般情境最近避難所 ID：{row['nearest_shelter_id']}<br>"
-                f"經度：{shelter_row.geometry.x:.2f}<br>"
-                f"緯度：{shelter_row.geometry.y:.2f}<br>"
+                f"經度：{shelter_row.geometry.x}<br>"
+                f"緯度：{shelter_row.geometry.y}<br>"
                 f"最快通行時間：{row['time_to_shelter_min']:.2f} 分鐘<br>"
                 f"一般情境避難可及性分數：{shel_score_normal:.2f}"
             )
@@ -1180,8 +1180,8 @@ def add_residential_popup_layers(
             medical_row_s = medical_lookup.loc[row[medical_id_col]]
             medical_text_scenario = (
                 f"{scenario_name} 情境最近醫療 ID：{row[medical_id_col]}<br>"
-                f"經度：{medical_row_s.geometry.x:.2f}<br>"
-                f"緯度：{medical_row_s.geometry.y:.2f}<br>"
+                f"經度：{medical_row_s.geometry.x}<br>"
+                f"緯度：{medical_row_s.geometry.y}<br>"
                 f"最快通行時間：{row[medical_time_col]:.2f} 分鐘<br>"
                 f"{scenario_name} 情境醫療可及性分數：{med_score_scenario:.2f}"
             )
@@ -1190,8 +1190,8 @@ def add_residential_popup_layers(
             shelter_row_s = shelter_lookup.loc[row[shelter_id_col]]
             shelter_text_scenario = (
                 f"{scenario_name} 情境最近避難所 ID：{row[shelter_id_col]}<br>"
-                f"經度：{shelter_row_s.geometry.x:.2f}<br>"
-                f"緯度：{shelter_row_s.geometry.y:.2f}<br>"
+                f"經度：{shelter_row_s.geometry.x}<br>"
+                f"緯度：{shelter_row_s.geometry.y}<br>"
                 f"最快通行時間：{row[shelter_time_col]:.2f} 分鐘<br>"
                 f"{scenario_name} 情境避難可及性分數：{shel_score_scenario:.2f}"
             )
@@ -1201,8 +1201,8 @@ def add_residential_popup_layers(
             f"土地利用第一級分類：{row.get('LCODE_C1', '')} {row.get('C1_NAME', '')}<br>"
             f"土地利用第二級分類：{row.get('LCODE_C2', '')} {row.get('C2_NAME', '')}<br>"
             f"土地利用第三級分類：{row.get('LCODE_C3', '')} {row.get('C3_NAME', '')}<br>"
-            f"經度：{res_lon:.2f}<br>"
-            f"緯度：{res_lat:.2f}<br><br>"
+            f"經度：{res_lon}<br>"
+            f"緯度：{res_lat}<br><br>"
             f"{medical_text_normal}<br><br>"
             f"{medical_text_scenario}<br><br>"
             f"{shelter_text_normal}<br><br>"
@@ -1412,8 +1412,8 @@ def build_scenario_map(
             f"土地利用大類: {row.get('LCODE_C1', '')} {row.get('C1_NAME', '')}<br>"
             f"土地利用中類: {row.get('LCODE_C2', '')} {row.get('C2_NAME', '')}<br>"
             f"土地利用小類: {row.get('LCODE_C3', '')} {row.get('C3_NAME', '')}<br>"
-            f"經度: {row.geometry.x:.2f}<br>"
-            f"緯度: {row.geometry.y:.2f}"
+            f"經度: {row.geometry.x}<br>"
+            f"緯度: {row.geometry.y}"
         )
         folium.CircleMarker(
             location=[row.geometry.y, row.geometry.x],
@@ -1441,8 +1441,8 @@ def build_scenario_map(
         for field in shelter_popup_fields:
             if field in row.index:
                 popup_lines.append(f"{field}: {row.get(field, '')}")
-        popup_lines.append(f"經度: {row.geometry.x:.2f}")
-        popup_lines.append(f"緯度: {row.geometry.y:.2f}")
+        popup_lines.append(f"經度: {row.geometry.x}")
+        popup_lines.append(f"緯度: {row.geometry.y}")
         popup_text = "<br>".join(popup_lines)
 
         folium.CircleMarker(
