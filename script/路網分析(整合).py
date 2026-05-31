@@ -1648,6 +1648,47 @@ population_gdf[population_value_col] = pd.to_numeric(
 )
 population_gdf = population_gdf.dropna(subset=[population_value_col]).copy()
 
+preferred_population_cols = [
+    "114年12月行政區人口統計 村里_屏東縣_人口數",
+    "114年12月行政區人口統計_村里_屏東縣_人口數",
+]
+
+population_gdf = gpd.read_file(population_gpkg_path)
+if population_gdf.crs is None:
+    population_gdf = population_gdf.set_crs(wgs84)
+else:
+    population_gdf = population_gdf.to_crs(wgs84)
+
+selected_population_col = next(
+    (col for col in preferred_population_cols if col in population_gdf.columns),
+    None
+)
+
+if selected_population_col is None:
+    selected_population_col = next(
+        (
+            col for col in population_gdf.columns
+            if "114年12月行政區人口統計" in str(col) and "人口數" in str(col)
+        ),
+        None
+    )
+
+if selected_population_col is None:
+    available_columns = ", ".join(map(str, population_gdf.columns))
+    raise KeyError(
+        "找不到暴露度指定的人口欄位。"
+        "預期欄位包含「114年12月行政區人口統計 村里_屏東縣_人口數」。"
+        f"目前圖層欄位為：{available_columns}"
+    )
+
+population_value_col = selected_population_col
+population_gdf[population_value_col] = pd.to_numeric(
+    population_gdf[population_value_col],
+    errors="coerce"
+)
+population_gdf = population_gdf.dropna(subset=[population_value_col]).copy()
+print(f"暴露度使用人口欄位：{population_value_col}")
+
 if population_gdf.empty:
     raise ValueError("人口數量分布圖層沒有可用的數值資料。")
 
