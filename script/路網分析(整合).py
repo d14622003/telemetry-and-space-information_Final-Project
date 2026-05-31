@@ -1162,7 +1162,7 @@ def add_residential_popup_layers(
                 f"一般情境最近醫療 ID：{row['nearest_medical_id']}<br>"
                 f"經度：{medical_row.geometry.x:.6f}<br>"
                 f"緯度：{medical_row.geometry.y:.6f}<br>"
-                f"旅行時間：{row['time_to_medical_min']:.2f} 分鐘<br>"
+                f"最快通行時間：{row['time_to_medical_min']:.2f} 分鐘<br>"
                 f"一般情境醫療可及性分數：{med_score_normal:.3f}"
             )
 
@@ -1172,7 +1172,7 @@ def add_residential_popup_layers(
                 f"一般情境最近避難所 ID：{row['nearest_shelter_id']}<br>"
                 f"經度：{shelter_row.geometry.x:.6f}<br>"
                 f"緯度：{shelter_row.geometry.y:.6f}<br>"
-                f"旅行時間：{row['time_to_shelter_min']:.2f} 分鐘<br>"
+                f"最快通行時間：{row['time_to_shelter_min']:.2f} 分鐘<br>"
                 f"一般情境避難可及性分數：{shel_score_normal:.3f}"
             )
 
@@ -1182,7 +1182,7 @@ def add_residential_popup_layers(
                 f"{scenario_name} 情境最近醫療 ID：{row[medical_id_col]}<br>"
                 f"經度：{medical_row_s.geometry.x:.6f}<br>"
                 f"緯度：{medical_row_s.geometry.y:.6f}<br>"
-                f"旅行時間：{row[medical_time_col]:.2f} 分鐘<br>"
+                f"最快通行時間：{row[medical_time_col]:.2f} 分鐘<br>"
                 f"{scenario_name} 情境醫療可及性分數：{med_score_scenario:.3f}"
             )
 
@@ -1192,7 +1192,7 @@ def add_residential_popup_layers(
                 f"{scenario_name} 情境最近避難所 ID：{row[shelter_id_col]}<br>"
                 f"經度：{shelter_row_s.geometry.x:.6f}<br>"
                 f"緯度：{shelter_row_s.geometry.y:.6f}<br>"
-                f"旅行時間：{row[shelter_time_col]:.2f} 分鐘<br>"
+                f"最快通行時間：{row[shelter_time_col]:.2f} 分鐘<br>"
                 f"{scenario_name} 情境避難可及性分數：{shel_score_scenario:.3f}"
             )
 
@@ -1329,7 +1329,7 @@ def build_scenario_map(
         },
         tooltip=folium.GeoJsonTooltip(
             fields=[col for col in ["highway_type", "speed_kmh", "length", "travel_time_min"] if col in edges_wgs84.columns],
-            aliases=["道路類型", "速限(km/h)", "長度(m)", "基準旅行時間(min)"]
+            aliases=["道路類型", "速限(km/h)", "長度(m)", "基準最快通行時間(min)"]
         )
     ).add_to(m)
 
@@ -1349,8 +1349,8 @@ def build_scenario_map(
                 ] if col in edges_scenario_passable_wgs84.columns
             ],
             aliases=[
-                "道路類型", "道路長度(m)", "基準旅行時間(min)",
-                "淹水深度(m)", "通行時間倍數", f"{scenario_name}情境旅行時間(min)"
+                "道路類型", "道路長度(m)", "基準最快通行時間(min)",
+                "淹水深度(m)", "通行時間倍數", f"{scenario_name}情境最快通行時間(min)"
             ]
         )
     ).add_to(m)
@@ -1371,7 +1371,7 @@ def build_scenario_map(
                 ] if col in edges_scenario_blocked_wgs84.columns
             ],
             aliases=[
-                "道路類型", "道路長度(m)", "基準旅行時間(min)",
+                "道路類型", "道路長度(m)", "基準最快通行時間(min)",
                 "淹水深度(m)", "是否阻斷"
             ]
         )
