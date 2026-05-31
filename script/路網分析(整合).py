@@ -1710,6 +1710,11 @@ population_max = float(population_gdf[population_value_col].max())
 if population_min == population_max:
     population_max = population_min + 1
 
+population_gdf["exposure_norm"] = (
+    (population_gdf[population_value_col] - population_min)
+    / (population_max - population_min)
+)
+
 #%% 建立暴露度分級地圖
 population_quantiles = np.quantile(
     population_gdf[population_value_col].to_numpy(),
@@ -1750,7 +1755,8 @@ population_map_discrete = folium.Map(
 
 def population_style_function_discrete(feature):
     population_value = feature["properties"].get(population_value_col)
-    if population_value is None or pd.isna(population_value):
+    population_norm = feature["properties"].get("exposure_norm")
+    if population_value is None or pd.isna(population_value) or population_norm is None or pd.isna(population_norm):
         return {
             "fillColor": "transparent",
             "color": "#666666",
@@ -1770,7 +1776,11 @@ population_legend_items = []
 for idx, color in enumerate(population_colors):
     lower = int(population_bins[idx])
     upper = int(population_bins[idx + 1])
-    label = f"{lower:,} - {upper:,}"
+    lower_norm = (lower - population_min) / (population_max - population_min)
+    upper_norm = (upper - population_min) / (population_max - population_min)
+    lower_norm = min(max(lower_norm, 0.0), 1.0)
+    upper_norm = min(max(upper_norm, 0.0), 1.0)
+    label = f"{lower_norm:.2f} - {upper_norm:.2f} ({lower:,} - {upper:,})"
     population_legend_items.append((color, label))
 
 population_items_html = "".join(
