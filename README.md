@@ -1,105 +1,174 @@
-# 嘉義市淹水情境下的路網可及性分析
+# 港口溪流域路網可及性與淹水風險分析
 
-本專案將原始 `Final Report` 中混合於 Colab notebook 的程式，整理為一個可在本機 Jupyter Lab 中維護的獨立期末報告專案。這一版先聚焦在「路網分析與視覺化」，保留醫院與避難收容處所的可及性分析、繞道分析、關鍵節點識別，以及互動式地圖輸出，並將主要程式彙整為單一 notebook。
+本專案以兩支主程式為核心：
 
-## 專案目標
+- `script/路網分析(整合).py`
+- `script/路網分析(整合)_英文版.py`
 
-- 比較不同淹水情境下，嘉義市道路網對醫療設施與避難收容處所的可達性變化
-- 找出淹水後需要明顯繞道的節點熱區
-- 透過路網中介中心性與孤立風險，辨識高風險咽喉節點
-- 產出適合期末報告使用的靜態圖與互動式地圖
+兩者的分析流程相同，只差在輸出文字與圖層說明語言不同。程式會結合土地利用資料、避難收容處所、淹水深度 raster、人口分布，以及從 OpenStreetMap 下載的道路網，進行住宅點到醫療設施與避難所的路網可及性分析，並進一步整合 exposure、hazard、vulnerability 與 risk 的互動地圖成果。
 
 ## 專案結構
 
 ```text
-Final Report(重建架構)/
+期末報告/
 ├─ data/
-│  ├─ chiayi_city_road_flood_analysis.gpkg
-│  ├─ 嘉義市醫院診所名單.json
-│  └─ 嘉義市避難收容處所.json
+│  ├─ 11_港口溪流域/
+│  │  └─ 01_土地利用/
+│  │     ├─ 2007_LU.shp
+│  │     ├─ 2007_LU.shx
+│  │     ├─ 2007_LU.dbf
+│  │     ├─ 2007_LU.sbn
+│  │     ├─ 2007_LU.sbx
+│  │     └─ 2007_LU.shp.xml
+│  ├─ Geo_RA/
+│  │  ├─ Q1point1_depth_max.GangKoudem.2022dem.tif
+│  │  ├─ Q10_depth_max.GangKoudem.2022dem.tif
+│  │  ├─ Q25_depth_max.GangKoudem.2022dem.tif
+│  │  ├─ Q50_depth_max.GangKoudem.2022dem.tif
+│  │  └─ Q100_depth_max.GangKoudem.2022dem.tif
+│  ├─ 人口數量分布.gpkg
+│  └─ 避難收容處所_清理後.csv
 ├─ output/
-│  ├─ figures/
-│  ├─ maps/
-│  └─ tables/
+│  ├─ Q1point1_路網分析互動地圖.html
+│  ├─ Q10_路網分析互動地圖.html
+│  ├─ Q25_路網分析互動地圖.html
+│  ├─ Q50_路網分析互動地圖.html
+│  ├─ Q100_路網分析互動地圖.html
+│  ├─ Q1point1_road_network_analysis_interactive_map.html
+│  ├─ Q10_road_network_analysis_interactive_map.html
+│  ├─ Q25_road_network_analysis_interactive_map.html
+│  ├─ Q50_road_network_analysis_interactive_map.html
+│  ├─ Q100_road_network_analysis_interactive_map.html
+│  ├─ residential_accessibility_comparison.csv
+│  └─ exposure_total_population.html
 ├─ script/
-│  └─ route_network_analysis.ipynb
+│  ├─ 路網分析(整合).py
+│  └─ 路網分析(整合)_英文版.py
 ├─ README.md
 └─ requirements.txt
 ```
 
-## 資料來源與目前使用資料
+## 已移除的無關或未使用檔案
 
-這一版只保留路網分析真正需要的資料，避免把尚未整理完成的其他分析一起帶入：
+已依照兩支主程式實際讀寫的路徑清理下列類型檔案：
 
-- `chiayi_city_road_flood_analysis.gpkg`
-  - 原始 notebook 在 Phase 1 匯出的道路 GeoPackage
-  - 已包含嘉義市道路幾何、`length` 欄位，以及各淹水情境的 `impassable_*` 布林欄位
-- `嘉義市醫院診所名單.json`
-  - 作為醫療設施點位來源
-- `嘉義市避難收容處所.json`
-  - 作為避難收容處所點位來源
+- 舊版或重複腳本：`路網分析(整合) - 複製.py`
+- Notebook 與 checkpoint：`.ipynb`、`.ipynb_checkpoints/`
+- Python 快取：`__pycache__/`
+- OSM 快取：`script/cache/`
+- 未被主程式直接使用的原始資料或中繼資料，例如：
+  - `1995_LU.*`
+  - 土壤資料夾 `02_土壤/`
+  - `riverpoly/`
+  - 行政區與村里原始 shapefile / csv
+  - 舊版整合中介成果 `chiayi_city_road_flood_analysis.gpkg`
+  - 未被程式直接讀取的 `Geo_RA/*.vrt`
+- 舊版輸出：`Q*_整合可及性與道路淹水地圖.html`
 
-目前不納入 DEM 與完整淹水 shp/zip，因為這一版的核心工作是先穩定完成路網分析與視覺化。
+## 主程式怎麼運作
+
+### 1. 讀取與整理基礎資料
+
+程式會讀取：
+
+- `data/11_港口溪流域/01_土地利用/2007_LU.shp`
+- `data/避難收容處所_清理後.csv`
+- `data/Geo_RA/*.tif`
+- `data/人口數量分布.gpkg`
+
+主要前處理內容：
+
+- 將土地利用資料統一轉為 `EPSG:3826`
+- 挑出住宅用地 `LCODE_C2 == 0502`
+- 挑出醫療保健用地 `LCODE_C2 == 0603`
+- 將住宅與醫療 polygon 轉為 centroid
+- 過濾研究區內或研究區外擴 1 km 內的避難收容處所
+
+### 2. 建立道路網
+
+程式會以研究區外擴 500 公尺的範圍，透過 `osmnx.graph_from_polygon()` 從 OpenStreetMap 抓取道路網，之後：
+
+- 投影到 `EPSG:3826`
+- 依道路型別設定預設車速
+- 計算每條道路的長度與旅行時間 `travel_time_min`
+
+這一步需要網路連線，因為道路網不是放在專案資料夾中，而是執行時動態下載。
+
+### 3. 可及性分析
+
+每個住宅 centroid、醫療 centroid、避難所點位都會先 snap 到最近的道路節點，接著在五個淹水情境下分別分析：
+
+- `Q1point1`
+- `Q10`
+- `Q25`
+- `Q50`
+- `Q100`
+
+每個情境都會把對應的淹水深度 raster 套到道路上，判定哪些道路受淹水影響，再計算：
+
+- 住宅到最近醫療點的距離與時間
+- 住宅到最近避難所的距離與時間
+- 在可接受時間門檻內是否可達
+- 各情境之間的可及性差異
+
+### 4. 風險整合
+
+最後會把路網分析結果與 `人口數量分布.gpkg` 結合，產出：
+
+- `Exposure`: 人口暴露量
+- `Hazard`: Q100 情境下道路受淹比例
+- `Vulnerability`: 住宅點在 Q100 下的醫療 / 避難可及性脆弱度
+- `Risk`: 綜合 hazard、exposure、vulnerability 的風險指標
+
+## 主要輸出成果
+
+中文主程式 `路網分析(整合).py` 會輸出：
+
+- `output/Q1point1_路網分析互動地圖.html`
+- `output/Q10_路網分析互動地圖.html`
+- `output/Q25_路網分析互動地圖.html`
+- `output/Q50_路網分析互動地圖.html`
+- `output/Q100_路網分析互動地圖.html`
+- `output/住宅可及性綜整比較.csv`
+- `output/exposure_total_population.html`
+
+英文主程式 `路網分析(整合)_英文版.py` 會輸出：
+
+- `output/Q1point1_road_network_analysis_interactive_map.html`
+- `output/Q10_road_network_analysis_interactive_map.html`
+- `output/Q25_road_network_analysis_interactive_map.html`
+- `output/Q50_road_network_analysis_interactive_map.html`
+- `output/Q100_road_network_analysis_interactive_map.html`
+- `output/residential_accessibility_comparison.csv`
+- `output/exposure_total_population.html`
+
+兩支程式都還會先產生一張初步檢查用的總覽地圖：
+
+- 中文版：`output/路網分析結果.html`
+- 英文版：`output/road_network_analysis_result.html`
+
+如果目前資料夾裡還沒有這兩個檔案，重新執行主程式後就會產生。
 
 ## 執行方式
 
-### 在 Jupyter Lab 中逐段執行
+請從 `script/` 資料夾內執行，因為程式使用了相對路徑 `../data` 與 `../output`。
 
-開啟下列 notebook：
+中文版：
 
-- `script/route_network_analysis.ipynb`
+```powershell
+cd script
+python "路網分析(整合).py"
+```
 
-這份 notebook 已經依照報告流程整理，且每一段 code cell 前都放入對應的 markdown 說明，方便展示、修改與擴寫。所有主要分析函式也都集中在同一份 notebook 內，不再依賴額外的 `.py` 腳本。
+英文版：
 
-## 主要分析內容
+```powershell
+cd script
+python "路網分析(整合)_英文版.py"
+```
 
-### 1. 設施點位整理與路網貼齊
+## 注意事項
 
-- 讀取醫院與避難所 JSON
-- 篩選與水災分析相關的設施
-- 將點位轉成 `EPSG:3826`
-- 吸附到最近的路網節點，作為可及性分析的目的地
-
-### 2. 可及性分析
-
-- 以平時路網計算各節點到最近醫院與避難所的距離
-- 對每個淹水情境移除不可通行路段
-- 重算各節點最短距離，統計新增孤立節點
-
-### 3. 繞道分析
-
-- 計算淹水後與正常情況的距離比值
-- 識別需大幅繞道的熱點節點
-- 輸出靜態圖與 Excel 詳細表
-
-### 4. 關鍵節點識別
-
-- 估算路網中介中心性
-- 與淹水情境下的孤立風險交叉比對
-- 找出可能造成系統性交通受阻的咽喉點
-
-### 5. 視覺化輸出
-
-- 設施分布圖
-- 可及性比較圖
-- 醫院與避難所距離差異圖
-- 繞道熱點圖
-- 關鍵咽喉節點圖
-- Folium 互動式地圖
-
-## 重構原則
-
-本次整理特別針對原始 notebook 常見問題做了處理：
-
-- 移除 Colab 專用絕對路徑
-- 全面改為以專案根目錄為基準的相對路徑
-- 將重複的 import、重複邏輯與一次性測試 cell 重新整理成 notebook 內的共用函式
-- 把輸出路徑集中管理到 `output/`
-- 保留單一 notebook 架構，方便期末報告後續持續擴寫
-
-## 後續可擴充方向
-
-- 補回前段非路網主題的資料分析
-- 納入更多淹水深度或時間情境的比較摘要
-- 增加行政區或里別彙整統計
-- 整合 DEM、高程與淹水潛勢圖做更完整的空間解釋
+- 兩支主程式都有 `from IPython.display import display`，因此建議安裝 `ipython`
+- 如果要重跑分析，`output/` 內的 HTML 與 CSV 會被覆寫
+- 若 OpenStreetMap 下載失敗，通常是網路或連線限制造成，不是本地資料缺失
