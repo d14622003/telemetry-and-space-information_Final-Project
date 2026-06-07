@@ -2,7 +2,7 @@
 .env
 
 # 忽略整個 data 資料夾及其所有內容
-data/
+# data/
 
 # Python
 __pycache__/
